@@ -71,7 +71,6 @@ PORT=5000
 WHATSAPP_VERIFY_TOKEN=tu_token_verificacion_whatsapp
 WHATSAPP_ACCESS_TOKEN=tu_token_acceso_whatsapp  
 WHATSAPP_PHONE_NUMBER_ID=tu_numero_telefono_id
-SECURITY_TOKEN=token_secreto_adicional_generado_automaticamente
 ```
 
 ## 📱 Configuración en WhatsApp Business
