@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: whatsapp-chatbot
+    name: wa-bot-7f2e9a1b-secure
     runtime: node
     buildCommand: npm install && npm run build
     startCommand: npm start
@@ -15,3 +15,5 @@ services:
         sync: false
       - key: WHATSAPP_PHONE_NUMBER_ID
         sync: false
+      - key: SECURITY_TOKEN
+        generateValue: true

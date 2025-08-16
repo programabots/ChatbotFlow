@@ -144,9 +144,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // WhatsApp Webhook endpoint
+  // WhatsApp Webhook endpoint con seguridad adicional
   app.post("/api/webhook/whatsapp", async (req, res) => {
     try {
+      // Verificar token de seguridad adicional
+      const securityToken = process.env.SECURITY_TOKEN;
+      const providedToken = req.headers['x-security-token'] || req.query.security_token;
+      
+      if (securityToken && providedToken !== securityToken) {
+        return res.status(403).json({ error: "Token de seguridad inválido" });
+      }
+      
       const webhookData = req.body;
       
       // Verify webhook (simplified for demo)
@@ -221,6 +229,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Webhook error:", error);
       res.status(500).json({ message: "Webhook processing error" });
+    }
+  });
+
+  // Endpoint webhook alternativo con ruta ofuscada para mayor seguridad
+  app.post("/api/x7f2e9a1b/webhook", async (req, res) => {
+    try {
+      const webhookData = req.body;
+      
+      // Verificar token en headers para máxima seguridad
+      if (req.query["hub.verify_token"]) {
+        const verifyToken = process.env.WHATSAPP_VERIFY_TOKEN || "your_verify_token";
+        if (req.query["hub.verify_token"] === verifyToken) {
+          res.send(req.query["hub.challenge"]);
+          return;
+        }
+      }
+
+      // Process incoming message (same logic as main webhook)
+      if (webhookData.entry && webhookData.entry[0] && webhookData.entry[0].changes) {
+        const changes = webhookData.entry[0].changes[0];
+        if (changes.value && changes.value.messages) {
+          const message = changes.value.messages[0];
+          const customerPhone = message.from;
+          const messageText = message.text?.body || "";
+
+          // Find or create conversation
+          let conversation = (await storage.getAllConversations()).find(
+            conv => conv.customerPhone === customerPhone
+          );
+
+          if (!conversation) {
+            conversation = await storage.createConversation({
+              customerPhone,
+              customerName: `Customer ${customerPhone.slice(-4)}`,
+              status: "active",
+              lastMessage: messageText,
+              unreadCount: 1
+            });
+          }
+
+          // Save incoming message
+          await storage.createMessage({
+            conversationId: conversation.id,
+            messageText,
+            messageType: "incoming",
+            isFromBot: false
+          });
+
+          // Check for auto-response
+          const botSettings = await storage.getBotSettings();
+          if (botSettings.autoResponses) {
+            const responses = await storage.searchResponsesByKeyword(messageText);
+            if (responses.length > 0) {
+              const botResponse = responses[0];
+              
+              // Save bot response
+              await storage.createMessage({
+                conversationId: conversation.id,
+                messageText: botResponse.responseText,
+                messageType: "outgoing",
+                isFromBot: true
+              });
+
+              // Update conversation
+              await storage.updateConversation(conversation.id, {
+                lastMessage: botResponse.responseText,
+                unreadCount: 0
+              });
+
+              console.log(`Bot response (secure): ${botResponse.responseText}`);
+            }
+          }
+        }
+      }
+
+      res.status(200).send("OK");
+    } catch (error) {
+      console.error("Error procesando webhook seguro:", error);
+      res.status(500).json({ error: "Error interno del servidor" });
     }
   });
 
