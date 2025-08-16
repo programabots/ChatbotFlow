@@ -112,7 +112,10 @@ export class MemStorage implements IStorage {
       const id = randomUUID();
       this.predefinedResponses.set(id, {
         id,
-        ...response,
+        keywords: response.keywords,
+        responseText: response.responseText,
+        category: response.category,
+        isActive: response.isActive,
         createdAt: new Date(),
         updatedAt: new Date()
       });
@@ -147,7 +150,11 @@ export class MemStorage implements IStorage {
       const id = randomUUID();
       this.conversations.set(id, {
         id,
-        ...conversation,
+        customerPhone: conversation.customerPhone,
+        customerName: conversation.customerName,
+        status: conversation.status,
+        lastMessage: conversation.lastMessage,
+        unreadCount: conversation.unreadCount,
         createdAt: new Date(),
         lastMessageAt: new Date()
       });
@@ -194,7 +201,10 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const newResponse: PredefinedResponse = {
       id,
-      ...response,
+      keywords: response.keywords,
+      responseText: response.responseText,
+      category: response.category,
+      isActive: response.isActive,
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -208,7 +218,10 @@ export class MemStorage implements IStorage {
 
     const updated: PredefinedResponse = {
       ...existing,
-      ...response,
+      keywords: response.keywords || existing.keywords,
+      responseText: response.responseText || existing.responseText,
+      category: response.category || existing.category,
+      isActive: response.isActive !== undefined ? response.isActive : existing.isActive,
       updatedAt: new Date()
     };
     this.predefinedResponses.set(id, updated);
@@ -247,7 +260,11 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const newConversation: Conversation = {
       id,
-      ...conversation,
+      customerPhone: conversation.customerPhone,
+      customerName: conversation.customerName,
+      status: conversation.status,
+      lastMessage: conversation.lastMessage,
+      unreadCount: conversation.unreadCount,
       createdAt: new Date(),
       lastMessageAt: new Date()
     };
@@ -278,7 +295,10 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const newMessage: Message = {
       id,
-      ...message,
+      conversationId: message.conversationId,
+      messageText: message.messageText,
+      messageType: message.messageType,
+      isFromBot: message.isFromBot || false,
       timestamp: new Date()
     };
     this.messages.set(id, newMessage);
@@ -313,7 +333,14 @@ export class MemStorage implements IStorage {
       return updated;
     } else {
       const id = randomUUID();
-      const newAnalytics: Analytics = { id, ...analytics };
+      const newAnalytics: Analytics = { 
+        id, 
+        date: analytics.date,
+        totalConversations: analytics.totalConversations || 0,
+        autoResponses: analytics.autoResponses || 0,
+        handoffs: analytics.handoffs || 0,
+        avgResponseTime: analytics.avgResponseTime || 0
+      };
       this.analytics.set(analytics.date, newAnalytics);
       return newAnalytics;
     }

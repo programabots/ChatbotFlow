@@ -65,8 +65,8 @@ export default function ResponseForm({ response, onClose }: ResponseFormProps) {
 
   const updateResponseMutation = useMutation({
     mutationFn: async (data: InsertPredefinedResponse) => {
-      const response = await apiRequest("PUT", `/api/responses/${response!.id}`, data);
-      return response.json();
+      const result = await apiRequest("PUT", `/api/responses/${response!.id}`, data);
+      return result.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/responses"] });
@@ -183,15 +183,15 @@ export default function ResponseForm({ response, onClose }: ResponseFormProps) {
             </Button>
           </div>
           <div className="flex flex-wrap gap-2 mt-2">
-            {formData.keywords.map((keyword) => (
-              <Badge key={keyword} variant="secondary" className="text-sm">
-                {keyword}
+            {formData.keywords.map((keyword, index) => (
+              <Badge key={`${keyword}-${index}`} variant="secondary" className="text-sm">
+                {String(keyword)}
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   className="ml-1 h-auto p-0 text-gray-500 hover:text-gray-700"
-                  onClick={() => removeKeyword(keyword)}
+                  onClick={() => removeKeyword(String(keyword))}
                   data-testid={`button-remove-keyword-${keyword}`}
                 >
                   <X className="h-3 w-3" />
