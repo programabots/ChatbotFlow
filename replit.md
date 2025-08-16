@@ -1,8 +1,15 @@
 # Overview
 
-This is a WhatsApp Business chatbot application built with a React frontend and Express.js backend. The application provides an admin dashboard for managing predefined responses, conversations, analytics, and bot settings. It features a modern UI built with shadcn/ui components and TailwindCSS, with a PostgreSQL database managed through Drizzle ORM.
+This is a comprehensive WhatsApp Business chatbot application built with a React frontend and Express.js backend. The application provides a complete admin dashboard for managing predefined responses, conversations, analytics, and bot settings. It features a modern UI built with shadcn/ui components and TailwindCSS, with in-memory storage for development and PostgreSQL support for production.
 
-The system is designed to handle automated customer service interactions through WhatsApp, allowing businesses to set up predefined responses based on keywords, manage conversations, and track performance analytics.
+The system handles automated customer service interactions through WhatsApp, allowing businesses to set up predefined responses based on keywords, manage conversations, and track performance analytics. 
+
+**Recent Updates (August 2025):**
+- Added comprehensive PWA (Progressive Web App) support for mobile app functionality
+- Implemented security features with obfuscated URLs and dual token authentication
+- Created complete deployment configuration for multiple platforms (Render, VPS, Cloudflare Tunnel)
+- Generated custom app icons and mobile-optimized interface
+- Added offline functionality through Service Worker implementation
 
 # User Preferences
 

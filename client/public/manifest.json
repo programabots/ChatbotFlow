@@ -1,0 +1,49 @@
+{
+  "name": "ChatBot WhatsApp - Panel Admin",
+  "short_name": "ChatBot Admin",
+  "description": "Panel de administración para chatbot de WhatsApp con respuestas automáticas",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#059669",
+  "orientation": "portrait-primary",
+  "categories": ["business", "productivity"],
+  "lang": "es",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Ver estadísticas del bot",
+      "url": "/dashboard",
+      "icons": [{ "src": "/icons/dashboard-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Conversaciones",
+      "short_name": "Chat",
+      "description": "Gestionar conversaciones",
+      "url": "/conversations",
+      "icons": [{ "src": "/icons/chat-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Respuestas",
+      "short_name": "Respuestas",
+      "description": "Configurar respuestas automáticas",
+      "url": "/responses",
+      "icons": [{ "src": "/icons/responses-96x96.png", "sizes": "96x96" }]
+    }
+  ]
+}
