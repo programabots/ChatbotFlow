@@ -1,5 +1,5 @@
-import {
-  type User,
+import { 
+  type User, 
   type InsertUser,
   type PredefinedResponse,
   type InsertPredefinedResponse,
@@ -10,11 +10,12 @@ import {
   type BotSettings,
   type InsertBotSettings,
   type Analytics,
-  type InsertAnalytics,
-} from "../shared/schema.js";
+  type InsertAnalytics
+} from "../shared/schema.js";   // ✅ importante: con extensión .js
 
 import { randomUUID } from "crypto";
 
+// Interfaces de almacenamiento
 export interface IStorage {
   // Users
   getUser(id: string): Promise<User | undefined>;
@@ -25,10 +26,7 @@ export interface IStorage {
   getAllPredefinedResponses(): Promise<PredefinedResponse[]>;
   getPredefinedResponse(id: string): Promise<PredefinedResponse | undefined>;
   createPredefinedResponse(response: InsertPredefinedResponse): Promise<PredefinedResponse>;
-  updatePredefinedResponse(
-    id: string,
-    response: Partial<InsertPredefinedResponse>
-  ): Promise<PredefinedResponse | undefined>;
+  updatePredefinedResponse(id: string, response: Partial<InsertPredefinedResponse>): Promise<PredefinedResponse | undefined>;
   deletePredefinedResponse(id: string): Promise<boolean>;
   searchResponsesByKeyword(keyword: string): Promise<PredefinedResponse[]>;
 
@@ -37,10 +35,7 @@ export interface IStorage {
   getActiveConversations(): Promise<Conversation[]>;
   getConversation(id: string): Promise<Conversation | undefined>;
   createConversation(conversation: InsertConversation): Promise<Conversation>;
-  updateConversation(
-    id: string,
-    conversation: Partial<InsertConversation>
-  ): Promise<Conversation | undefined>;
+  updateConversation(id: string, conversation: Partial<InsertConversation>): Promise<Conversation | undefined>;
 
   // Messages
   getMessagesByConversation(conversationId: string): Promise<Message[]>;
@@ -56,6 +51,7 @@ export interface IStorage {
   createOrUpdateAnalytics(analytics: InsertAnalytics): Promise<Analytics>;
 }
 
+// Implementación en memoria
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private predefinedResponses: Map<string, PredefinedResponse>;
@@ -71,12 +67,6 @@ export class MemStorage implements IStorage {
     this.messages = new Map();
     this.analytics = new Map();
 
-    // ✅ Default bot settings completo
+    // ✅ Configuración por defecto del bot (sin comas de más)
     this.botSettings = {
-      id: randomUUID(),
-      autoResponses: true,
-      businessHours: true,
-      autoHandoff: false,
-      businessHoursStart: "09:00",
-      businessHoursEnd: "18:00",
-      outOfHoursMessage:
+      id: randomUUID
