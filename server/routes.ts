@@ -1,5 +1,5 @@
 // server/routes.ts
-import { Express, Request, Response } from "express";
+import { type Express, type Request, type Response } from "express";
 import { MemStorage } from "./storage.js";
 
 const storage = new MemStorage();
@@ -23,7 +23,7 @@ export async function registerRoutes(app: Express) {
 
   // ==== Predefined Responses ====
   app.get("/api/responses", async (_req, res) => {
-    const responses = await storage.getAllPredefinedResponses(); // ✅ corregido
+    const responses = await storage.getAllPredefinedResponses();
     res.json(responses);
   });
 
@@ -36,9 +36,26 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  app.put("/api/responses/:id", async (req, res) => {
+    const updated = await storage.updatePredefinedResponse(req.params.id, req.body);
+    if (!updated) return res.status(404).json({ message: "Response not found" });
+    res.json(updated);
+  });
+
+  app.delete("/api/responses/:id", async (req, res) => {
+    const ok = await storage.deletePredefinedResponse(req.params.id);
+    if (!ok) return res.status(404).json({ message: "Response not found" });
+    res.status(204).send();
+  });
+
   // ==== Conversations ====
   app.get("/api/conversations", async (_req, res) => {
-    const convos = await storage.getAllConversations(); // ✅ corregido
+    const convos = await storage.getAllConversations();
+    res.json(convos);
+  });
+
+  app.get("/api/conversations/active", async (_req, res) => {
+    const convos = await storage.getActiveConversations();
     res.json(convos);
   });
 
@@ -55,7 +72,7 @@ export async function registerRoutes(app: Express) {
 
   // ==== Messages ====
   app.get("/api/conversations/:id/messages", async (req, res) => {
-    const msgs = await storage.getMessagesByConversation(req.params.id); // ✅ corregido
+    const msgs = await storage.getMessagesByConversation(req.params.id);
     res.json(msgs);
   });
 
@@ -83,13 +100,20 @@ export async function registerRoutes(app: Express) {
   });
 
   // ==== Analytics ====
-  app.get("/api/analytics", async (_req, res) => {
-    const stats = await storage.getTodayAnalytics(); // ✅ corregido
-    res.json(stats);
+  app.get("/api/analytics/:date", async (req, res) => {
+    const entry = await storage.getAnalyticsByDate(req.params.date);
+    if (!entry) return res.status(404).json({ message: "No analytics for date" });
+    res.json(entry);
+  });
+
+  app.get("/api/analytics/today", async (_req, res) => {
+    const entry = await storage.getTodayAnalytics();
+    if (!entry) return res.status(404).json({ message: "No analytics for today" });
+    res.json(entry);
   });
 
   app.post("/api/analytics", async (req, res) => {
-    const entry = await storage.createOrUpdateAnalytics(req.body); // ✅ corregido
+    const entry = await storage.createOrUpdateAnalytics(req.body);
     res.status(201).json(entry);
   });
 

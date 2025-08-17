@@ -10,16 +10,12 @@
     "resolveJsonModule": true,
     "strict": false
   },
-  "include": [
-    "server/**/*.ts",
-    "shared/**/*.ts"
-  ],
+  "include": ["server/**/*.ts", "shared/**/*.ts"],
   "exclude": [
-    "client",
     "node_modules",
     "dist",
     "build",
-    "**/*.test.*",
+    "client",
     "vite.config.ts",
     "server/vite.ts"
   ]
