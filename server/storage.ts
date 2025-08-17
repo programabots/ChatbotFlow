@@ -75,7 +75,8 @@
             autoHandoff: false,
             businessHoursStart: "09:00",
             businessHoursEnd: "18:00",
-            outOfHoursMessage: "Gracias por contactarnos. Nuestro horario de atención es de 9:00 a 18:00. Te responderemos a la brevedad."
+            outOfHoursMessage: "Gracias por contactarnos. Nuestro horario de atención es de 9:00 a 18:00. Te responderemos a la brevedad.",
+
           };
         }
 
