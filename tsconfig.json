@@ -8,8 +8,20 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "strict": false
+    "strict": false,
+    "jsx": "react-jsx",
+    "types": ["vite/client"]
   },
-  "include": ["server/**/*.ts", "shared/**/*.ts"],
-  "exclude": ["client/node_modules", "node_modules", "dist", "build", "**/*.test.*"]
+  "include": [
+    "server/**/*.ts",
+    "shared/**/*.ts",
+    "client/**/*.ts",
+    "client/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "**/*.test.*"
+  ]
 }
