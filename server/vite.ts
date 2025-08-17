@@ -19,8 +19,7 @@ export function log(message: string, source = "express") {
 }
 
 /**
- * Sólo se usa en desarrollo. Inyecta el middleware de Vite para HMR
- * y sirve el index.html transformado.
+ * Desarrollo: inyecta el middleware de Vite (HMR) y sirve index.html transformado.
  */
 export async function setupVite(app: Express, server: Server) {
   const serverOptions = {
@@ -37,30 +36,24 @@ export async function setupVite(app: Express, server: Server) {
       ...viteLogger,
       error: (msg, options) => {
         viteLogger.error(msg, options);
-        // fallá fuerte en dev si Vite se queja
         process.exit(1);
       },
     },
   });
 
-  // Middlewares de Vite (sirven /@vite, HMR, etc.)
   app.use(vite.middlewares);
 
-  // Fallback a index.html (transformado por Vite)
   app.use("*", async (req, res, next) => {
     try {
       const url = req.originalUrl;
-
-      // En dev leemos SIEMPRE desde /client/index.html del repo
+      // En dev, siempre desde el index del cliente en el repo
       const clientTemplate = path.resolve(process.cwd(), "client", "index.html");
-
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
-      // cache-busting del entry principal (evita cache agresivo del navegador)
+      // cache-busting del entry principal
       template = template.replace(
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${Date.now()}"`
       );
-
       const page = await vite.transformIndexHtml(url, template);
       res.status(200).setHeader("Content-Type", "text/html").end(page);
     } catch (e) {
@@ -71,13 +64,11 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 /**
- * Producción: sirve los estáticos ya “buildeados” por Vite
- * desde <root>/dist/public
+ * Producción: sirve los estáticos ya construidos por Vite desde <root>/dist/public
+ * Usamos process.cwd() para evitar duplicar "dist" por usar __dirname relativo a dist/server.
  */
 export function serveStatic(app: Express) {
-  // En runtime (prod), __dirname === <root>/dist/server
-  // El cliente queda en <root>/dist/public → subir a .. y entrar a "public"
-  const distPath = path.resolve(__dirname, "..", "public");
+  const distPath = path.resolve(process.cwd(), "dist", "public");
 
   if (!fs.existsSync(distPath)) {
     throw new Error(
@@ -85,10 +76,10 @@ export function serveStatic(app: Express) {
     );
   }
 
-  // Sirve assets estáticos
+  // sirve assets estáticos
   app.use(express.static(distPath));
 
-  // Fallback SPA → index.html de producción
+  // fallback de SPA
   app.use("*", (_req, res) => {
     res.sendFile(path.join(distPath, "index.html"));
   });
