@@ -8,8 +8,15 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "strict": false
+    "strict": false,
+
+    "baseUrl": ".", 
+    "paths": {
+      "@/*": ["client/src/*"],
+      "@shared/*": ["shared/*"],
+      "@assets/*": ["attached_assets/*"]
+    }
   },
-  "include": ["server/**/*.ts","shared/**/*.ts"],
-  "exclude": ["client","node_modules","dist","build","**/*.test.*"]
+  "include": ["server/**/*.ts", "shared/**/*.ts"],
+  "exclude": ["client", "node_modules", "dist", "build", "**/*.test.*"]
 }
