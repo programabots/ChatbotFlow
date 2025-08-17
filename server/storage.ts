@@ -71,3 +71,4 @@ export class MemStorage implements IStorage {
       autoResponses: true,
       businessHours: true,
       autoHandoff: false
+}
