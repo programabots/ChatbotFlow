@@ -1,94 +1,88 @@
 // server/index.ts
 import express, { type Request, type Response, type NextFunction } from "express";
+import { createServer } from "http";
 import { registerRoutes } from "./routes.js";
-import { setupVite, serveStatic, log } from "./vite.js";
+
+function log(message: string, source = "express") {
+  const t = new Date().toLocaleTimeString("en-US", { hour12: false });
+  console.log(`${t} [${source}] ${message}`);
+}
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Logging sencillo para rutas /api
+// Log básico de /api
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined;
+  let captured: unknown;
 
-  const originalResJson = res.json.bind(res);
-  (res as any).json = (bodyJson: any, ...args: any[]) => {
-    capturedJsonResponse = bodyJson;
-    return originalResJson(bodyJson, ...args);
+  const origJson = res.json.bind(res);
+  (res as any).json = (body: unknown, ...args: unknown[]) => {
+    captured = body;
+    return origJson(body, ...args);
   };
 
   res.on("finish", () => {
-    const duration = Date.now() - start;
     if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        try {
-          logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-        } catch {}
-      }
-      if (logLine.length > 80) logLine = logLine.slice(0, 79) + "…";
-      log(logLine);
+      const ms = Date.now() - start;
+      let line = `${req.method} ${path} ${res.statusCode} in ${ms}ms`;
+      try {
+        if (captured) line += ` :: ${JSON.stringify(captured)}`;
+      } catch {}
+      if (line.length > 200) line = line.slice(0, 199) + "…";
+      log(line);
     }
   });
 
   next();
 });
 
-(async () => {
-  // Registra todas las rutas de API
-  const server = await registerRoutes(app);
+// Registra rutas de API
+await registerRoutes(app);
 
-  // 🔹 Arreglo rápido: responder algo útil en "/"
-  app.get("/", (_req: Request, res: Response) => {
-    res.type("html").send(`<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <title>ChatbotFlow</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <style>
-      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 40px; line-height: 1.5; }
-      a { color: #2563eb; text-decoration: none; }
-      a:hover { text-decoration: underline; }
-      code { padding: 2px 6px; background:#f3f4f6; border-radius:6px; }
-    </style>
-  </head>
-  <body>
-    <h1>ChatbotFlow</h1>
-    <p>Backend en línea ✅</p>
-    <p>Endpoints de prueba:</p>
-    <ul>
-      <li><a href="/api/settings">GET /api/settings</a></li>
-      <li><a href="/api/conversations">GET /api/conversations</a></li>
-      <li><a href="/api/responses">GET /api/responses</a></li>
-    </ul>
-    <p>Puerto: <code>${process.env.PORT ?? "5000"}</code></p>
-  </body>
-</html>`);
-  });
+// Página mínima en raíz para no ver "Cannot GET /"
+app.get("/", (_req: Request, res: Response) => {
+  res.type("html").send(`<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ChatbotFlow</title>
+<style>body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:40px;line-height:1.5}
+a{color:#2563eb;text-decoration:none}a:hover{text-decoration:underline}code{background:#f3f4f6;border-radius:6px;padding:2px 6px}</style>
+</head><body>
+<h1>ChatbotFlow</h1>
+<p>Backend en línea ✅</p>
+<ul>
+<li><a href="/api/settings">GET /api/settings</a></li>
+<li><a href="/api/conversations">GET /api/conversations</a></li>
+<li><a href="/api/responses">GET /api/responses</a></li>
+</ul>
+<p>PORT: <code>${process.env.PORT ?? "5000"}</code></p>
+</body></html>`);
+});
 
-  // Manejador de errores
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err?.status || err?.statusCode || 500;
-    const message = err?.message || "Internal Server Error";
-    res.status(status).json({ message });
-    // Re-lanzamos para que quede en logs de Render
-    throw err;
-  });
+// Manejador de errores JSON
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  const status = err?.status || err?.statusCode || 500;
+  const message = err?.message || "Internal Server Error";
+  res.status(status).json({ message });
+  throw err; // para que Render lo loguee
+});
 
-  // En desarrollo usa Vite middleware; en prod sirve estáticos (si hay)
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
+// Crea http.Server y escucha
+const httpServer = createServer(app);
+
+// En desarrollo, si querés Vite, se importa dinámicamente (no rompe el build si no existe)
+if (app.get("env") === "development") {
+  try {
+    const viteMod = await import("./vite.js");
+    if (viteMod?.setupVite) {
+      await viteMod.setupVite(app, httpServer);
+    }
+  } catch {
+    // no pasa nada si no está
   }
+}
 
-  // Servir en el puerto de Render (o 5000 local)
-  const port = parseInt(process.env.PORT || "5000", 10);
-  server.listen(
-    { port, host: "0.0.0.0", reusePort: true },
-    () => { log(`serving on port ${port}`); }
-  );
-})();
+const port = parseInt(process.env.PORT || "5000", 10);
+httpServer.listen({ port, host: "0.0.0.0" }, () => log(`serving on port ${port}`));
