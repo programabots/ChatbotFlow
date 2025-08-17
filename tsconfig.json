@@ -10,18 +10,6 @@
     "resolveJsonModule": true,
     "strict": false
   },
-  "include": [
-    "server/**/*.ts",
-    "shared/**/*.ts"
-  ],
-  "exclude": [
-    "client",
-    "node_modules",
-    "dist",
-    "build",
-    "**/*.test.*"
-  ]
+  "include": ["server/**/*.ts","shared/**/*.ts"],
+  "exclude": ["client","node_modules","dist","build","**/*.test.*"]
 }
-
-
-
