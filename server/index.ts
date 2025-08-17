@@ -1,76 +1,67 @@
 import express, { type Request, type Response, type NextFunction } from "express";
 import path from "path";
 import { fileURLToPath } from "url";
-import { registerRoutes } from "./routes.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+function log(message: string) {
+  const ts = new Date().toISOString();
+  console.log(`${ts} [server] ${message}`);
+}
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Log simple de APIs
+// logging de /api
 app.use((req, res, next) => {
   const start = Date.now();
-  const pathUrl = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined;
+  const pathReq = req.path;
+  let captured: unknown;
 
-  const originalResJson = res.json.bind(res);
-  (res as any).json = (bodyJson: any, ...args: any[]) => {
-    capturedJsonResponse = bodyJson;
-    return originalResJson(bodyJson, ...args);
+  const origJson = res.json.bind(res);
+  res.json = (body: unknown) => {
+    captured = body;
+    return origJson(body);
   };
 
   res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (pathUrl.startsWith("/api")) {
-      let logLine = `${req.method} ${pathUrl} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        try {
-          logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-        } catch {
-          // ignore
-        }
-      }
-      if (logLine.length > 120) logLine = logLine.slice(0, 119) + "…";
-      console.log(logLine);
+    const ms = Date.now() - start;
+    if (pathReq.startsWith("/api")) {
+      let line = `${req.method} ${pathReq} ${res.statusCode} in ${ms}ms`;
+      if (captured) line += ` :: ${JSON.stringify(captured)}`;
+      if (line.length > 160) line = line.slice(0, 159) + "…";
+      log(line);
     }
   });
 
   next();
 });
 
-// Registrar rutas API
-await registerRoutes(app);
-
-// ---- Servir el FRONTEND compilado por Vite ----
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const staticDir = path.resolve(__dirname, "../public");
-
-// Archivos estáticos (JS/CSS/IMG del build de Vite)
-app.use(express.static(staticDir));
-
-// Página de estado de la API (opcional)
-app.get("/api", (_req: Request, res: Response) => {
-  res.type("text/html").send(`
-    <h1>ChatbotFlow API</h1>
-    <p>Servicio levantado ✅</p>
-    <p>Probá: <code>/api/settings</code>, <code>/api/conversations</code>, <code>/api/responses</code></p>
-  `);
+// API mínima (placeholder)
+app.get("/api/health", (_req: Request, res: Response) => {
+  res.json({ ok: true });
 });
 
-// Catch-all para la SPA de React (debe ir al final)
+// servir estáticos del cliente compilado
+const publicDir = path.resolve(__dirname, "../public");
+app.use(express.static(publicDir));
+
+// fallback SPA
 app.get("*", (_req: Request, res: Response) => {
-  res.sendFile(path.join(staticDir, "index.html"));
+  res.sendFile(path.join(publicDir, "index.html"));
 });
 
-// Manejo básico de errores
+// error handler
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  const status = err?.status || err?.statusCode || 500;
+  const status = err?.status || 500;
   const message = err?.message || "Internal Server Error";
   res.status(status).json({ message });
-  console.error(err);
+  log(`ERROR ${status}: ${message}`);
 });
 
 const port = parseInt(process.env.PORT || "5000", 10);
 app.listen(port, "0.0.0.0", () => {
-  console.log(`serving on port ${port}`);
+  log(`serving on port ${port}`);
 });

@@ -15,13 +15,22 @@
   "include": [
     "server/**/*.ts",
     "shared/**/*.ts",
-    "client/**/*.ts",
-    "client/**/*.tsx"
+    "client/src/main.tsx",
+    "client/src/App.tsx",
+    "client/index.html",
+    "client/src/index.css",
+    "vite.config.ts",
+    "postcss.config.js",
+    "tailwind.config.js"
   ],
   "exclude": [
     "node_modules",
     "dist",
     "build",
-    "**/*.test.*"
+    "**/*.test.*",
+    "client/src/pages/**/*",
+    "client/src/components/**/*",
+    "client/src/hooks/**/*",
+    "client/src/lib/**/*"
   ]
 }
