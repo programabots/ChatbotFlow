@@ -23,7 +23,7 @@ export async function registerRoutes(app: Express) {
 
   // ==== Predefined Responses ====
   app.get("/api/responses", async (_req, res) => {
-    const responses = await storage.listPredefinedResponses();
+    const responses = await storage.getAllPredefinedResponses(); // ✅ corregido
     res.json(responses);
   });
 
@@ -38,7 +38,7 @@ export async function registerRoutes(app: Express) {
 
   // ==== Conversations ====
   app.get("/api/conversations", async (_req, res) => {
-    const convos = await storage.listConversations();
+    const convos = await storage.getAllConversations(); // ✅ corregido
     res.json(convos);
   });
 
@@ -55,7 +55,7 @@ export async function registerRoutes(app: Express) {
 
   // ==== Messages ====
   app.get("/api/conversations/:id/messages", async (req, res) => {
-    const msgs = await storage.listMessages(req.params.id);
+    const msgs = await storage.getMessagesByConversation(req.params.id); // ✅ corregido
     res.json(msgs);
   });
 
@@ -84,12 +84,12 @@ export async function registerRoutes(app: Express) {
 
   // ==== Analytics ====
   app.get("/api/analytics", async (_req, res) => {
-    const stats = await storage.listAnalytics();
+    const stats = await storage.getTodayAnalytics(); // ✅ corregido
     res.json(stats);
   });
 
   app.post("/api/analytics", async (req, res) => {
-    const entry = await storage.createAnalytics(req.body);
+    const entry = await storage.createOrUpdateAnalytics(req.body); // ✅ corregido
     res.status(201).json(entry);
   });
 
