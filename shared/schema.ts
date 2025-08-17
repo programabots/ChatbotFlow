@@ -1,16 +1,11 @@
-// Users
-export interface User {
+// shared/schema.ts
+export type User = {
   id: string;
   username: string;
   password: string;
-}
-export interface InsertUser {
-  username: string;
-  password: string;
-}
+};
 
-// Predefined Responses
-export interface PredefinedResponse {
+export type PredefinedResponse = {
   id: string;
   keywords: string[];
   responseText: string;
@@ -18,55 +13,29 @@ export interface PredefinedResponse {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
-}
-export interface InsertPredefinedResponse {
-  keywords: string[];
-  responseText: string;
-  category: string;
-  isActive: boolean;
-}
+};
 
-// Conversations
-export type ConversationStatus = "active" | "closed" | "transferred";
-
-export interface Conversation {
+export type Conversation = {
   id: string;
   customerPhone: string;
   customerName?: string;
-  status: ConversationStatus;
+  status: "active" | "closed" | "transferred";
   lastMessage?: string;
   lastMessageAt: Date;
   unreadCount: number;
   createdAt: Date;
-}
-export interface InsertConversation {
-  customerPhone: string;
-  customerName?: string;
-  status?: ConversationStatus;
-  lastMessage?: string;
-  unreadCount?: number;
-}
+};
 
-// Messages
-export type MessageType = "incoming" | "outgoing" | "bot";
-
-export interface Message {
+export type Message = {
   id: string;
   conversationId: string;
   messageText: string;
-  messageType: MessageType;
+  messageType: "incoming" | "outgoing" | "bot";
   isFromBot: boolean;
   timestamp: Date;
-}
-export interface InsertMessage {
-  conversationId: string;
-  messageText: string;
-  messageType: MessageType;
-  isFromBot?: boolean;
-}
+};
 
-// Bot Settings
-export interface BotSettings {
+export type BotSettings = {
   id: string;
   autoResponses: boolean;
   businessHours: boolean;
@@ -74,29 +43,21 @@ export interface BotSettings {
   businessHoursStart: string;
   businessHoursEnd: string;
   outOfHoursMessage: string;
-}
-export interface InsertBotSettings {
-  autoResponses?: boolean;
-  businessHours?: boolean;
-  autoHandoff?: boolean;
-  businessHoursStart?: string;
-  businessHoursEnd?: string;
-  outOfHoursMessage?: string;
-}
+};
 
-// Analytics
-export interface Analytics {
+export type Analytics = {
   id: string;
-  date: string; // YYYY-MM-DD
+  date: string;
   totalConversations: number;
   autoResponses: number;
   handoffs: number;
   avgResponseTime: number; // ms
-}
-export interface InsertAnalytics {
-  date: string;
-  totalConversations?: number;
-  autoResponses?: number;
-  handoffs?: number;
-  avgResponseTime?: number;
-}
+};
+
+// Insert types (lo que espera el server en POST/PUT)
+export type InsertUser = Omit<User, "id">;
+export type InsertPredefinedResponse = Omit<PredefinedResponse, "id" | "createdAt" | "updatedAt">;
+export type InsertConversation = Omit<Conversation, "id" | "createdAt" | "lastMessageAt">;
+export type InsertMessage = Omit<Message, "id" | "timestamp">;
+export type InsertBotSettings = Partial<Omit<BotSettings, "id">>;
+export type InsertAnalytics = Omit<Analytics, "id">;
