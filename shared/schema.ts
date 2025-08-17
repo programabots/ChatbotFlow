@@ -1,13 +1,16 @@
-// shared/schema.ts  (versión sin Drizzle/Zod)
-
-export type User = {
+// Users
+export interface User {
   id: string;
   username: string;
   password: string;
-};
-export type InsertUser = Omit<User, "id">;
+}
+export interface InsertUser {
+  username: string;
+  password: string;
+}
 
-export type PredefinedResponse = {
+// Predefined Responses
+export interface PredefinedResponse {
   id: string;
   keywords: string[];
   responseText: string;
@@ -15,48 +18,85 @@ export type PredefinedResponse = {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
-};
-export type InsertPredefinedResponse = Omit<PredefinedResponse, "id" | "createdAt" | "updatedAt">;
+}
+export interface InsertPredefinedResponse {
+  keywords: string[];
+  responseText: string;
+  category: string;
+  isActive: boolean;
+}
 
-export type Conversation = {
+// Conversations
+export type ConversationStatus = "active" | "closed" | "transferred";
+
+export interface Conversation {
   id: string;
   customerPhone: string;
   customerName?: string;
-  status: "active" | "closed" | "transferred";
+  status: ConversationStatus;
   lastMessage?: string;
   lastMessageAt: Date;
   unreadCount: number;
   createdAt: Date;
-};
-export type InsertConversation = Omit<Conversation, "id" | "createdAt" | "lastMessageAt">;
+}
+export interface InsertConversation {
+  customerPhone: string;
+  customerName?: string;
+  status?: ConversationStatus;
+  lastMessage?: string;
+  unreadCount?: number;
+}
 
-export type Message = {
+// Messages
+export type MessageType = "incoming" | "outgoing" | "bot";
+
+export interface Message {
   id: string;
   conversationId: string;
   messageText: string;
-  messageType: "incoming" | "outgoing" | "bot";
+  messageType: MessageType;
   isFromBot: boolean;
   timestamp: Date;
-};
-export type InsertMessage = Omit<Message, "id" | "timestamp">;
+}
+export interface InsertMessage {
+  conversationId: string;
+  messageText: string;
+  messageType: MessageType;
+  isFromBot?: boolean;
+}
 
-export type BotSettings = {
+// Bot Settings
+export interface BotSettings {
   id: string;
   autoResponses: boolean;
   businessHours: boolean;
   autoHandoff: boolean;
-  businessHoursStart: string; // "HH:mm"
-  businessHoursEnd: string;   // "HH:mm"
+  businessHoursStart: string;
+  businessHoursEnd: string;
   outOfHoursMessage: string;
-};
-export type InsertBotSettings = Partial<Omit<BotSettings, "id">>;
+}
+export interface InsertBotSettings {
+  autoResponses?: boolean;
+  businessHours?: boolean;
+  autoHandoff?: boolean;
+  businessHoursStart?: string;
+  businessHoursEnd?: string;
+  outOfHoursMessage?: string;
+}
 
-export type Analytics = {
+// Analytics
+export interface Analytics {
   id: string;
   date: string; // YYYY-MM-DD
   totalConversations: number;
   autoResponses: number;
   handoffs: number;
   avgResponseTime: number; // ms
-};
-export type InsertAnalytics = Omit<Analytics, "id">;
+}
+export interface InsertAnalytics {
+  date: string;
+  totalConversations?: number;
+  autoResponses?: number;
+  handoffs?: number;
+  avgResponseTime?: number;
+}

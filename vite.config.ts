@@ -11,7 +11,11 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": path.resolve(import.meta.dirname, "client", "src")
+      "@": path.resolve(import.meta.dirname, "client", "src"),
+      "@shared": path.resolve(import.meta.dirname, "shared")
     }
+  },
+  server: {
+    fs: { strict: true, deny: ["**/.*"] }
   }
 });

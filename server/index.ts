@@ -1,67 +1,53 @@
 import express, { type Request, type Response, type NextFunction } from "express";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-function log(message: string) {
-  const ts = new Date().toISOString();
-  console.log(`${ts} [server] ${message}`);
-}
+import { registerRoutes } from "./routes.js";
+import { setupVite, serveStatic, log } from "./vite.js";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// logging de /api
 app.use((req, res, next) => {
   const start = Date.now();
-  const pathReq = req.path;
-  let captured: unknown;
+  const path = req.path;
+  let capturedJsonResponse: Record<string, any> | undefined;
 
-  const origJson = res.json.bind(res);
-  res.json = (body: unknown) => {
-    captured = body;
-    return origJson(body);
+  const originalResJson = res.json;
+  res.json = function (bodyJson, ...args) {
+    capturedJsonResponse = bodyJson;
+    return originalResJson.apply(res, [bodyJson, ...args]);
   };
 
   res.on("finish", () => {
-    const ms = Date.now() - start;
-    if (pathReq.startsWith("/api")) {
-      let line = `${req.method} ${pathReq} ${res.statusCode} in ${ms}ms`;
-      if (captured) line += ` :: ${JSON.stringify(captured)}`;
-      if (line.length > 160) line = line.slice(0, 159) + "…";
-      log(line);
+    const duration = Date.now() - start;
+    if (path.startsWith("/api")) {
+      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+      if (capturedJsonResponse) logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      if (logLine.length > 80) logLine = logLine.slice(0, 79) + "…";
+      log(logLine);
     }
   });
 
   next();
 });
 
-// API mínima (placeholder)
-app.get("/api/health", (_req: Request, res: Response) => {
-  res.json({ ok: true });
-});
+(async () => {
+  const server = await registerRoutes(app);
 
-// servir estáticos del cliente compilado
-const publicDir = path.resolve(__dirname, "../public");
-app.use(express.static(publicDir));
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+    res.status(status).json({ message });
+    throw err;
+  });
 
-// fallback SPA
-app.get("*", (_req: Request, res: Response) => {
-  res.sendFile(path.join(publicDir, "index.html"));
-});
+  if (app.get("env") === "development") {
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
+  }
 
-// error handler
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  const status = err?.status || 500;
-  const message = err?.message || "Internal Server Error";
-  res.status(status).json({ message });
-  log(`ERROR ${status}: ${message}`);
-});
-
-const port = parseInt(process.env.PORT || "5000", 10);
-app.listen(port, "0.0.0.0", () => {
-  log(`serving on port ${port}`);
-});
+  const port = parseInt(process.env.PORT || "5000", 10);
+  server.listen({ port, host: "0.0.0.0", reusePort: true }, () => {
+    log(`serving on port ${port}`);
+  });
+})();

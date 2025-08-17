@@ -1,9 +1,7 @@
-/** @type {import('tailwindcss').Config} */
+import type { Config } from "tailwindcss";
+
 export default {
-  content: [
-    "./client/index.html",
-    "./client/src/**/*.{js,ts,jsx,tsx}"
-  ],
+  content: ["./client/index.html", "./client/src/**/*.{ts,tsx}"],
   theme: { extend: {} },
   plugins: []
-};
+} satisfies Config;

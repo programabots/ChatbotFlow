@@ -1,4 +1,3 @@
-// server/storage.ts
 import {
   type User,
   type InsertUser,
@@ -11,49 +10,35 @@ import {
   type BotSettings,
   type InsertBotSettings,
   type Analytics,
-  type InsertAnalytics,
+  type InsertAnalytics
 } from "../shared/schema.js";
 
-import { randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
 
 export interface IStorage {
-  // Users
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
 
-  // Predefined Responses
   getAllPredefinedResponses(): Promise<PredefinedResponse[]>;
   getPredefinedResponse(id: string): Promise<PredefinedResponse | undefined>;
-  createPredefinedResponse(
-    response: InsertPredefinedResponse
-  ): Promise<PredefinedResponse>;
-  updatePredefinedResponse(
-    id: string,
-    response: Partial<InsertPredefinedResponse>
-  ): Promise<PredefinedResponse | undefined>;
+  createPredefinedResponse(response: InsertPredefinedResponse): Promise<PredefinedResponse>;
+  updatePredefinedResponse(id: string, response: Partial<InsertPredefinedResponse>): Promise<PredefinedResponse | undefined>;
   deletePredefinedResponse(id: string): Promise<boolean>;
   searchResponsesByKeyword(keyword: string): Promise<PredefinedResponse[]>;
 
-  // Conversations
   getAllConversations(): Promise<Conversation[]>;
   getActiveConversations(): Promise<Conversation[]>;
   getConversation(id: string): Promise<Conversation | undefined>;
   createConversation(conversation: InsertConversation): Promise<Conversation>;
-  updateConversation(
-    id: string,
-    conversation: Partial<InsertConversation>
-  ): Promise<Conversation | undefined>;
+  updateConversation(id: string, conversation: Partial<InsertConversation>): Promise<Conversation | undefined>;
 
-  // Messages
   getMessagesByConversation(conversationId: string): Promise<Message[]>;
   createMessage(message: InsertMessage): Promise<Message>;
 
-  // Bot Settings
   getBotSettings(): Promise<BotSettings>;
   updateBotSettings(settings: Partial<InsertBotSettings>): Promise<BotSettings>;
 
-  // Analytics
   getTodayAnalytics(): Promise<Analytics | undefined>;
   getAnalyticsByDate(date: string): Promise<Analytics | undefined>;
   createOrUpdateAnalytics(analytics: InsertAnalytics): Promise<Analytics>;
@@ -65,244 +50,202 @@ export class MemStorage implements IStorage {
   private conversations = new Map<string, Conversation>();
   private messages = new Map<string, Message>();
   private analytics = new Map<string, Analytics>();
-
-  private botSettings: BotSettings = {
-    id: randomUUID(),
-    autoResponses: true,
-    businessHours: true,
-    autoHandoff: false,
-    businessHoursStart: "09:00",
-    businessHoursEnd: "18:00",
-    outOfHoursMessage:
-      "Gracias por contactarnos. Nuestro horario de atención es de 9:00 a 18:00. Te responderemos a la brevedad.",
-  };
+  private botSettings: BotSettings;
 
   constructor() {
-    // datos de ejemplo mínimos
+    this.botSettings = {
+      id: randomUUID(),
+      autoResponses: true,
+      businessHours: true,
+      autoHandoff: false,
+      businessHoursStart: "09:00",
+      businessHoursEnd: "18:00",
+      outOfHoursMessage:
+        "Gracias por contactarnos. Nuestro horario de atención es de 9:00 a 18:00. Te responderemos a la brevedad."
+    };
+
+    // Seed básico
     const pr1: PredefinedResponse = {
       id: randomUUID(),
-      keywords: ["hola", "saludo"],
-      responseText: "¡Hola! 👋 ¿En qué puedo ayudarte?",
+      keywords: ["hola", "buenas", "saludo"],
+      responseText: "¡Hola! 👋 ¿En qué podemos ayudarte?",
       category: "General",
       isActive: true,
       createdAt: new Date(),
-      updatedAt: new Date(),
+      updatedAt: new Date()
     };
     this.predefinedResponses.set(pr1.id, pr1);
 
-    const c1: Conversation = {
+    const today = new Date().toISOString().split("T")[0];
+    this.analytics.set(today, {
       id: randomUUID(),
-      customerPhone: "+5491112345678",
-      customerName: "Ejemplo",
-      status: "active",
-      lastMessage: "Hola",
-      lastMessageAt: new Date(),
-      unreadCount: 1,
-      createdAt: new Date(),
-    };
-    this.conversations.set(c1.id, c1);
+      date: today,
+      totalConversations: 5,
+      autoResponses: 3,
+      handoffs: 1,
+      avgResponseTime: 2000
+    });
   }
 
-  // ---------- Users ----------
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  // Users
+  async getUser(id: string) { return this.users.get(id); }
+  async getUserByUsername(username: string) {
+    return Array.from(this.users.values()).find(u => u.username === username);
+  }
+  async createUser(insert: InsertUser) {
+    const id = randomUUID();
+    const user: User = { id, username: insert.username, password: insert.password };
+    this.users.set(id, user);
+    return user;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find((u) => u.username === username);
-  }
-
-  async createUser(user: InsertUser): Promise<User> {
-    const created: User = { id: randomUUID(), username: user.username, password: user.password };
-    this.users.set(created.id, created);
-    return created;
-  }
-
-  // ---------- Predefined Responses ----------
-  async getAllPredefinedResponses(): Promise<PredefinedResponse[]> {
+  // Predefined Responses
+  async getAllPredefinedResponses() {
     return Array.from(this.predefinedResponses.values());
   }
-
-  async getPredefinedResponse(id: string): Promise<PredefinedResponse | undefined> {
+  async getPredefinedResponse(id: string) {
     return this.predefinedResponses.get(id);
   }
-
-  async createPredefinedResponse(
-    response: InsertPredefinedResponse
-  ): Promise<PredefinedResponse> {
-    const created: PredefinedResponse = {
+  async createPredefinedResponse(insert: InsertPredefinedResponse) {
+    const now = new Date();
+    const item: PredefinedResponse = {
       id: randomUUID(),
-      keywords: response.keywords,
-      responseText: response.responseText,
-      category: response.category,
-      isActive: response.isActive ?? true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      keywords: insert.keywords,
+      responseText: insert.responseText,
+      category: insert.category,
+      isActive: insert.isActive,
+      createdAt: now,
+      updatedAt: now
     };
-    this.predefinedResponses.set(created.id, created);
-    return created;
+    this.predefinedResponses.set(item.id, item);
+    return item;
   }
-
-  async updatePredefinedResponse(
-    id: string,
-    response: Partial<InsertPredefinedResponse>
-  ): Promise<PredefinedResponse | undefined> {
-    const existing = this.predefinedResponses.get(id);
-    if (!existing) return undefined;
+  async updatePredefinedResponse(id: string, patch: Partial<InsertPredefinedResponse>) {
+    const cur = this.predefinedResponses.get(id);
+    if (!cur) return undefined;
     const updated: PredefinedResponse = {
-      ...existing,
-      keywords: response.keywords ?? existing.keywords,
-      responseText: response.responseText ?? existing.responseText,
-      category: response.category ?? existing.category,
-      isActive: response.isActive ?? existing.isActive,
-      updatedAt: new Date(),
+      ...cur,
+      keywords: patch.keywords ?? cur.keywords,
+      responseText: patch.responseText ?? cur.responseText,
+      category: patch.category ?? cur.category,
+      isActive: patch.isActive ?? cur.isActive,
+      updatedAt: new Date()
     };
     this.predefinedResponses.set(id, updated);
     return updated;
   }
-
-  async deletePredefinedResponse(id: string): Promise<boolean> {
+  async deletePredefinedResponse(id: string) {
     return this.predefinedResponses.delete(id);
   }
-
-  async searchResponsesByKeyword(keyword: string): Promise<PredefinedResponse[]> {
+  async searchResponsesByKeyword(keyword: string) {
     const q = keyword.toLowerCase();
-    return Array.from(this.predefinedResponses.values()).filter(
-      (r) =>
-        r.responseText.toLowerCase().includes(q) ||
-        r.keywords.some((k) => k.toLowerCase().includes(q))
+    return Array.from(this.predefinedResponses.values()).filter(r =>
+      r.responseText.toLowerCase().includes(q) ||
+      r.keywords.some(k => k.toLowerCase().includes(q))
     );
   }
 
-  // ---------- Conversations ----------
-  async getAllConversations(): Promise<Conversation[]> {
-    return Array.from(this.conversations.values()).sort(
-      (a, b) => b.lastMessageAt.getTime() - a.lastMessageAt.getTime()
-    );
+  // Conversations
+  async getAllConversations() {
+    return Array.from(this.conversations.values())
+      .sort((a, b) => +b.lastMessageAt - +a.lastMessageAt);
   }
-
-  async getActiveConversations(): Promise<Conversation[]> {
-    return (await this.getAllConversations()).filter((c) => c.status === "active");
+  async getActiveConversations() {
+    return (await this.getAllConversations()).filter(c => c.status === "active");
   }
-
-  async getConversation(id: string): Promise<Conversation | undefined> {
-    return this.conversations.get(id);
-  }
-
-  async createConversation(data: InsertConversation): Promise<Conversation> {
+  async getConversation(id: string) { return this.conversations.get(id); }
+  async createConversation(insert: InsertConversation) {
+    const id = randomUUID();
     const now = new Date();
-    const created: Conversation = {
-      id: randomUUID(),
-      customerPhone: data.customerPhone,
-      customerName: data.customerName,
-      status: data.status ?? "active", // ⚠️ sin "open"
-      lastMessage: data.lastMessage,
-      lastMessageAt: now, // lo seteamos nosotros
-      unreadCount: data.unreadCount ?? 0,
-      createdAt: now,
+    const conv: Conversation = {
+      id,
+      customerPhone: insert.customerPhone,
+      customerName: insert.customerName,
+      status: insert.status ?? "active",
+      lastMessage: insert.lastMessage,
+      lastMessageAt: now,
+      unreadCount: insert.unreadCount ?? 0,
+      createdAt: now
     };
-    this.conversations.set(created.id, created);
-    return created;
+    this.conversations.set(id, conv);
+    return conv;
   }
-
-  async updateConversation(
-    id: string,
-    patch: Partial<InsertConversation>
-  ): Promise<Conversation | undefined> {
-    const existing = this.conversations.get(id);
-    if (!existing) return undefined;
-
+  async updateConversation(id: string, patch: Partial<InsertConversation>) {
+    const cur = this.conversations.get(id);
+    if (!cur) return undefined;
     const updated: Conversation = {
-      ...existing,
-      customerPhone: patch.customerPhone ?? existing.customerPhone,
-      customerName: patch.customerName ?? existing.customerName,
-      status: patch.status ?? existing.status, // ⚠️ sólo "active" | "closed" | "transferred"
-      lastMessage: patch.lastMessage ?? existing.lastMessage,
-      lastMessageAt:
-        patch.lastMessage !== undefined ? new Date() : existing.lastMessageAt,
-      unreadCount:
-        patch.unreadCount !== undefined ? patch.unreadCount : existing.unreadCount,
+      ...cur,
+      customerPhone: patch.customerPhone ?? cur.customerPhone,
+      customerName: patch.customerName ?? cur.customerName,
+      status: patch.status ?? cur.status,
+      lastMessage: patch.lastMessage ?? cur.lastMessage,
+      unreadCount: patch.unreadCount ?? cur.unreadCount,
+      lastMessageAt: patch.lastMessage ? new Date() : cur.lastMessageAt
     };
     this.conversations.set(id, updated);
     return updated;
   }
 
-  // ---------- Messages ----------
-  async getMessagesByConversation(conversationId: string): Promise<Message[]> {
+  // Messages
+  async getMessagesByConversation(conversationId: string) {
     return Array.from(this.messages.values())
-      .filter((m) => m.conversationId === conversationId)
-      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+      .filter(m => m.conversationId === conversationId)
+      .sort((a, b) => +a.timestamp - +b.timestamp);
   }
-
-  async createMessage(message: InsertMessage): Promise<Message> {
-    const created: Message = {
-      id: randomUUID(),
-      conversationId: message.conversationId,
-      messageText: message.messageText,
-      messageType: message.messageType,
-      isFromBot: message.isFromBot ?? false,
-      timestamp: new Date(),
+  async createMessage(insert: InsertMessage) {
+    const id = randomUUID();
+    const msg: Message = {
+      id,
+      conversationId: insert.conversationId,
+      messageText: insert.messageText,
+      messageType: insert.messageType,
+      isFromBot: insert.isFromBot ?? false,
+      timestamp: new Date()
     };
-    this.messages.set(created.id, created);
-
-    // actualizar conversación relacionada
-    const convo = this.conversations.get(message.conversationId);
-    if (convo) {
-      convo.lastMessage = message.messageText;
-      convo.lastMessageAt = new Date();
-      // si el mensaje es entrante y no es del bot, incrementa unread
-      if (message.messageType === "incoming" && !message.isFromBot) {
-        convo.unreadCount = (convo.unreadCount ?? 0) + 1;
-      }
-      this.conversations.set(convo.id, convo);
+    this.messages.set(id, msg);
+    // touch conversation
+    const conv = this.conversations.get(insert.conversationId);
+    if (conv) {
+      conv.lastMessage = msg.messageText;
+      conv.lastMessageAt = msg.timestamp;
+      this.conversations.set(conv.id, conv);
     }
-
-    return created;
+    return msg;
   }
 
-  // ---------- Bot Settings ----------
-  async getBotSettings(): Promise<BotSettings> {
-    return this.botSettings;
-  }
-
-  async updateBotSettings(settings: Partial<InsertBotSettings>): Promise<BotSettings> {
+  // Bot Settings
+  async getBotSettings() { return this.botSettings; }
+  async updateBotSettings(patch: Partial<InsertBotSettings>) {
     this.botSettings = {
       ...this.botSettings,
-      ...settings,
+      ...patch
     } as BotSettings;
     return this.botSettings;
   }
 
-  // ---------- Analytics ----------
-  async getTodayAnalytics(): Promise<Analytics | undefined> {
-    const today = new Date().toISOString().slice(0, 10);
+  // Analytics
+  async getTodayAnalytics() {
+    const today = new Date().toISOString().split("T")[0];
     return this.analytics.get(today);
   }
-
-  async getAnalyticsByDate(date: string): Promise<Analytics | undefined> {
-    return this.analytics.get(date);
-  }
-
-  async createOrUpdateAnalytics(analytics: InsertAnalytics): Promise<Analytics> {
-    const prev = this.analytics.get(analytics.date);
-    if (prev) {
-      const merged: Analytics = {
-        ...prev,
-        ...analytics,
-      };
-      this.analytics.set(analytics.date, merged);
-      return merged;
+  async getAnalyticsByDate(date: string) { return this.analytics.get(date); }
+  async createOrUpdateAnalytics(insert: InsertAnalytics) {
+    const existing = this.analytics.get(insert.date);
+    if (existing) {
+      const updated: Analytics = { ...existing, ...insert };
+      this.analytics.set(insert.date, updated);
+      return updated;
     }
-    const created: Analytics = {
+    const a: Analytics = {
       id: randomUUID(),
-      date: analytics.date,
-      totalConversations: analytics.totalConversations ?? 0,
-      autoResponses: analytics.autoResponses ?? 0,
-      handoffs: analytics.handoffs ?? 0,
-      avgResponseTime: analytics.avgResponseTime ?? 0,
+      date: insert.date,
+      totalConversations: insert.totalConversations ?? 0,
+      autoResponses: insert.autoResponses ?? 0,
+      handoffs: insert.handoffs ?? 0,
+      avgResponseTime: insert.avgResponseTime ?? 0
     };
-    this.analytics.set(created.date, created);
-    return created;
+    this.analytics.set(a.date, a);
+    return a;
   }
 }
 
