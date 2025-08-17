@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": ".",
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "strict": false
+  },
+  "include": [
+    "server/**/*.{ts,tsx}",
+    "shared/**/*.{ts,tsx}"
+  ],
+  "exclude": [
+    "node_modules",
+    "client",
+    "dist",
+    "build",
+    "**/*.test.*"
+  ]
+}
