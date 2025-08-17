@@ -1,17 +1,27 @@
 {
-  "include": ["client/src/**/*", "shared/**/*", "server/**/*"],
-  "exclude": ["node_modules", "build", "dist", "**/*.test.ts"],
-  {
-    "compilerOptions": {
-      "outDir": "dist",
-      "rootDir": ".",              // o la carpeta real del código
-      "esModuleInterop": true,
-      "skipLibCheck": true,
-      "target": "ES2020",
-      "module": "CommonJS"         // o ESNext si usas ESM
-    },
-    "include": ["**/*.{ts,tsx}"],  // o "app/**/*.{ts,tsx}", "server/**/*.ts", etc.
-    "exclude": ["node_modules", "build", "dist", "**/*.test.ts"]
-  }
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": ".",
+    "target": "ES2020",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "strict": false
+  },
+  "include": [
+    "server/**/*.ts",
+    "shared/**/*.ts"
+  ],
+  "exclude": [
+    "client",
+    "node_modules",
+    "dist",
+    "build",
+    "**/*.test.*"
+  ]
+}
+
 
 
