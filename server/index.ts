@@ -1,62 +1,40 @@
-// server/index.ts
-import express, { type Request, type Response, type NextFunction } from "express";
-import { registerRoutes } from "./routes.js";
-import { setupVite, serveStatic, log } from "./vite.js";
-import http from "node:http";
+import express from "express";
 
 const app = express();
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
 
-// logger sencillo para /api
-app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined;
+const VERIFY_TOKEN = process.env.VERIFY_TOKEN || "3009_elmejorprogramadorchild";
 
-  const originalResJson = res.json.bind(res);
-  (res as any).json = (bodyJson: unknown, ...args: any[]) => {
-    capturedJsonResponse = bodyJson as Record<string, any>;
-    return originalResJson(bodyJson, ...args);
-  };
+// ✅ GET para validación inicial
+app.get("/webhook", (req, res) => {
+const mode = req.query["hub.mode"];
+const token = req.query["hub.verify_token"];
+const challenge = req.query["hub.challenge"];
 
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let line = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) line += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      if (line.length > 80) line = line.slice(0, 79) + "…";
-      log(line);
-    }
-  });
-
-  next();
+if (mode && token) {
+if (mode === "subscribe" && token === VERIFY_TOKEN) {
+console.log("✅ Webhook verificado correctamente");
+return res.status(200).send(challenge);
+} else {
+return res.sendStatus(403); // Token inválido
+}
+}
+return res.sendStatus(400);
 });
 
-(async () => {
-  // creamos el server http explícito para poder pasarlo a Vite HMR en dev
-  const server = http.createServer(app);
+// ✅ POST para recibir mensajes de WhatsApp
+app.post("/webhook", (req, res) => {
+const body = req.body;
+console.log("📩 Mensaje recibido:", JSON.stringify(body, null, 2));
 
-  await registerRoutes(app);
+res.sendStatus(200); // WhatsApp necesita 200 OK
+});
 
-  // manejador de errores
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-    res.status(status).json({ message });
-    // log y dejar que Render lo capture
-    console.error(err);
-  });
+// Health check
+app.get("/healthz", (req, res) => res.send("OK"));
 
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+});
 
-  const port = parseInt(process.env.PORT || "5000", 10);
-  server.listen(
-    { port, host: "0.0.0.0" },
-    () => log(`serving on port ${port}`)
-  );
-})();
